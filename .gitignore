@@ -10,3 +10,6 @@ desktop.ini
 .DS_Store
 .vscode/
 .idea/
+
+# Personal data file — import it locally, do not publish it
+my-data.json
