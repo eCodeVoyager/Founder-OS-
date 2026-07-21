@@ -1,0 +1,12 @@
+# Personal / local-only — never commit to a public repo
+Founder_Operating_System_v2.html
+*.backup.json
+founder-os-backup-*.json
+health-log-*.csv
+
+# OS / editor cruft
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

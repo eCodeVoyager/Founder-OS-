@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Founder OS — a single-file personal operating system: kanban, OKRs, health log, finance runway, and a study-abroad application CRM. All data stays in your browser.">
+<meta name="color-scheme" content="dark light">
+<meta name="robots" content="noindex">
+<title>Founder OS v3</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+<style>
+:root{
+  --bg:#0b0e14; --bg-2:#11151f; --surface:#151a26; --surface-2:#1b2231;
+  --border:#242c3d; --border-2:#2f3a4f;
+  --text:#e6ebf5; --text-2:#9aa7bd; --text-3:#6b7a94;
+  --accent:#4d8dff; --accent-soft:#4d8dff22;
+  --ok:#2ecc8f; --warn:#f5a623; --bad:#ff5d5d; --info:#8b5cf6;
+  --radius:12px; --radius-sm:8px;
+  --shadow:0 1px 2px #0006, 0 8px 24px #0004;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Code",Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#f4f6fa; --bg-2:#eaeef5; --surface:#ffffff; --surface-2:#f7f9fc;
+  --border:#dce2ec; --border-2:#c6d0e0;
+  --text:#111827; --text-2:#51607a; --text-3:#7d8ba3;
+  --accent:#1f5fd6; --accent-soft:#1f5fd614;
+  --ok:#0f9d63; --warn:#b7791f; --bad:#d33a3a; --info:#6d3fd4;
+  --shadow:0 1px 2px #0f172a10, 0 8px 24px #0f172a0d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:64px;
+}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+h2{font-size:1.05rem}
+h3{font-size:.85rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.08em}
+a{color:var(--accent)}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1400px;margin:0 auto;padding:0 16px}
+header.top{
+  position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand h1{font-size:1.15rem}
+.brand .sub{color:var(--text-3);font-size:.78rem;white-space:nowrap}
+.tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{
+  background:var(--surface); color:var(--text); border:1px solid var(--border);
+  padding:6px 11px; border-radius:var(--radius-sm); font-size:.8rem; font-weight:520;
+  display:inline-flex; align-items:center; gap:6px; transition:.12s;
+}
+.btn:hover{background:var(--surface-2);border-color:var(--border-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:3px 8px;font-size:.72rem}
+.btn.icon{padding:5px 8px}
+
+nav.tabs{display:flex;gap:2px;overflow-x:auto;padding-bottom:0;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{
+  background:none;border:none;border-bottom:2px solid transparent;color:var(--text-3);
+  padding:9px 12px;font-size:.83rem;font-weight:550;white-space:nowrap;transition:.12s;
+}
+nav.tabs button:hover{color:var(--text-2)}
+nav.tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+
+main{padding-top:20px}
+.panel[hidden]{display:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;align-items:start}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px 16px; box-shadow:var(--shadow);
+}
+.card > header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card > header h2{margin-right:auto}
+.card.span2{grid-column:1/-1}
+
+/* ---------- forms ---------- */
+label.row{display:grid;grid-template-columns:1fr 128px;gap:10px;align-items:center;padding:5px 0;font-size:.87rem}
+label.row > span{color:var(--text-2);min-width:0}
+label.stack{display:block;font-size:.8rem;color:var(--text-2);margin:10px 0 4px}
+input,textarea,select{
+  width:100%; background:var(--bg-2); color:var(--text); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:6px 9px; font-family:inherit; font-size:.87rem;
+  transition:.12s;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+textarea{resize:vertical;min-height:64px;line-height:1.45}
+select{cursor:pointer}
+.readout{
+  font-family:var(--mono);font-size:.87rem;text-align:right;padding:6px 9px;
+  background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--radius-sm);
+}
+.check{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:.87rem;cursor:pointer}
+.check input{flex:none}
+.check span{min-width:0}
+.check input:checked + span{color:var(--text-3);text-decoration:line-through}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px}
+.kpi .k{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)}
+.kpi .v{font-size:1.5rem;font-weight:670;font-family:var(--mono);margin-top:3px;letter-spacing:-.02em}
+.kpi .m{font-size:.7rem;color:var(--text-3);margin-top:1px}
+.kpi.ok .v{color:var(--ok)} .kpi.warn .v{color:var(--warn)} .kpi.bad .v{color:var(--bad)}
+
+/* ---------- kanban ---------- */
+.kb-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.kb{display:grid;grid-template-columns:repeat(5,minmax(230px,1fr));gap:12px;align-items:start;overflow-x:auto;padding-bottom:12px}
+@media(max-width:1100px){.kb{grid-template-columns:repeat(5,minmax(240px,240px))}}
+.col{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;min-height:120px}
+.col > header{display:flex;align-items:center;gap:7px;padding:10px 12px 8px;border-bottom:1px solid var(--border)}
+.col > header .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.col > header .name{font-size:.78rem;font-weight:650;text-transform:uppercase;letter-spacing:.06em}
+.col > header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--text-3);background:var(--surface);padding:1px 7px;border-radius:20px}
+.col .list{padding:8px;display:flex;flex-direction:column;gap:8px;min-height:60px;flex:1}
+.col.dragover{border-color:var(--accent);background:var(--accent-soft)}
+.kcard{
+  background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--track,var(--text-3));
+  border-radius:var(--radius-sm);padding:9px 10px;cursor:grab;box-shadow:var(--shadow);transition:.12s;
+}
+.kcard:hover{border-color:var(--border-2)}
+.kcard.dragging{opacity:.4}
+.kcard .t{font-size:.84rem;font-weight:550;line-height:1.35;word-break:break-word}
+.kcard .n{font-size:.76rem;color:var(--text-2);margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.kcard .meta{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.tag{font-size:.66rem;font-weight:620;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.due{font-family:var(--mono);font-size:.7rem;color:var(--text-3)}
+.due.soon{color:var(--warn)} .due.over{color:var(--bad);font-weight:650}
+.kcard .acts{display:flex;gap:3px;margin-left:auto;opacity:0;transition:.12s}
+.kcard:hover .acts,.kcard:focus-within .acts{opacity:1}
+@media(hover:none){.kcard .acts{opacity:1}}
+.kcard .acts button{background:none;border:none;color:var(--text-3);padding:1px 4px;font-size:.8rem;border-radius:4px;line-height:1}
+.kcard .acts button:hover{background:var(--surface-2);color:var(--text)}
+.col .add{margin:0 8px 8px;padding:6px;background:none;border:1px dashed var(--border);color:var(--text-3);border-radius:var(--radius-sm);font-size:.78rem}
+.col .add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.8rem;min-width:820px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--surface-2);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);font-weight:650;position:sticky;top:0;white-space:nowrap}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:var(--mono);white-space:nowrap}
+td select,td input{font-size:.76rem;padding:4px 6px}
+.pill{display:inline-block;font-size:.66rem;font-weight:650;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.pill.live{background:#2ecc8f22;color:var(--ok)}
+.pill.soon{background:#f5a62322;color:var(--warn)}
+.pill.closed{background:#ff5d5d1c;color:var(--bad)}
+.pill.neutral{background:var(--surface-2);color:var(--text-3);border:1px solid var(--border)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filters select,.filters input{width:auto;min-width:140px}
+
+/* ---------- timeline ---------- */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:grid;grid-template-columns:104px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.84rem}
+.tl li:last-child{border-bottom:none}
+.tl .d{font-family:var(--mono);font-size:.75rem;color:var(--text-3)}
+.tl .cd{font-family:var(--mono);font-size:.7rem;color:var(--text-3);margin-left:6px}
+.tl .cd.soon{color:var(--warn)} .tl .cd.over{color:var(--text-3);opacity:.5}
+
+/* ---------- misc ---------- */
+.hint{font-size:.75rem;color:var(--text-3);line-height:1.5}
+.divider{height:1px;background:var(--border);margin:14px -16px}
+.empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:24px 12px}
+.spark{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:8px}
+.spark i{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;opacity:.75}
+.spark i[data-bad="1"]{background:var(--bad)}
+.log{max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.logitem{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:.8rem}
+.logitem .lh{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.logitem .lh b{font-family:var(--mono);font-size:.74rem}
+.logitem dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.logitem dt{color:var(--text-3);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.logitem dd{margin:0;white-space:pre-wrap}
+#toast{
+  position:fixed;bottom:18px;left:50%;transform:translate(-50%,80px);z-index:200;
+  background:var(--surface);border:1px solid var(--border-2);color:var(--text);
+  padding:9px 16px;border-radius:24px;font-size:.82rem;box-shadow:var(--shadow);
+  transition:transform .22s cubic-bezier(.2,.8,.3,1);pointer-events:none;
+}
+#toast.show{transform:translate(-50%,0)}
+dialog{
+  border:1px solid var(--border-2);background:var(--surface);color:var(--text);
+  border-radius:var(--radius);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:var(--shadow);
+}
+dialog::backdrop{background:#0009;backdrop-filter:blur(2px)}
+dialog form{padding:18px}
+dialog h2{margin-bottom:12px}
+dialog .drow{display:flex;gap:10px}
+dialog .drow > *{flex:1;min-width:0}
+dialog footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.savedot{width:7px;height:7px;border-radius:50%;background:var(--ok);opacity:0;transition:opacity .3s}
+.savedot.on{opacity:1}
+@media(max-width:640px){
+  label.row{grid-template-columns:1fr 100px}
+  .brand .sub{display:none}
+  .wrap{padding:0 12px}
+}
+@media print{
+  header.top,.tools,nav.tabs,.btn,.col .add,.kcard .acts{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  .panel[hidden]{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>🧭 Founder OS</h1>
+        <span class="sub" id="cycle">Jul 2026 → Sep 2027</span>
+      </div>
+      <div class="tools">
+        <span class="savedot" id="savedot" title="Saved"></span>
+        <button class="btn ghost sm" id="btnTheme" title="Toggle theme">🌗 Theme</button>
+        <button class="btn ghost sm" id="btnExport" title="Download a JSON backup">⬇ Export</button>
+        <button class="btn ghost sm" id="btnImport" title="Restore from a JSON backup">⬆ Import</button>
+        <button class="btn ghost sm danger" id="btnReset" title="Erase all local data">Reset</button>
+        <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-panel="p-dash" aria-selected="true">Dashboard</button>
+      <button role="tab" data-panel="p-kanban" aria-selected="false">Kanban</button>
+      <button role="tab" data-panel="p-abroad" aria-selected="false">Study Abroad</button>
+      <button role="tab" data-panel="p-health" aria-selected="false">Health</button>
+      <button role="tab" data-panel="p-money" aria-selected="false">Finance</button>
+      <button role="tab" data-panel="p-build" aria-selected="false">Build &amp; Ship</button>
+      <button role="tab" data-panel="p-review" aria-selected="false">Weekly Review</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ DASHBOARD ============ -->
+<section class="panel" id="p-dash" role="tabpanel">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="cards">
+    <div class="card">
+      <header><h2>📊 Executive numbers</h2></header>
+      <label class="row"><span>Searlo MRR</span><input id="f_mrr" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>RenderKit active users</span><input id="f_rkusers" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>RenderKit paying customers</span><input id="f_rkpaying" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Savings pool (BDT)</span><input id="f_savings" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Monthly income (BDT)</span><input id="f_income" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Monthly burn (BDT)</span><input id="f_burn" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Cash runway</span><output class="readout" id="o_runway">—</output></label>
+      <label class="row"><span>Savings in EUR</span><output class="readout" id="o_eur">—</output></label>
+      <label class="row"><span>BDT per EUR</span><input id="f_fx" type="number" min="1" step="any" inputmode="decimal" placeholder="130"></label>
+      <p class="hint">Runway = savings ÷ (burn − income). If income ≥ burn, runway is unbounded and shows ∞.</p>
+    </div>
+
+    <div class="card">
+      <header><h2>🎯 Quarterly OKRs</h2></header>
+      <label class="stack" for="f_okr1">Objective 1</label><textarea id="f_okr1" placeholder="Objective — key result 1 / 2 / 3"></textarea>
+      <label class="stack" for="f_okr2">Objective 2</label><textarea id="f_okr2" placeholder="Objective — key result 1 / 2 / 3"></textarea>
+      <label class="stack" for="f_okr3">Objective 3</label><textarea id="f_okr3" placeholder="Objective — key result 1 / 2 / 3"></textarea>
+    </div>
+
+    <div class="card">
+      <header><h2>📅 Weekly time budget</h2></header>
+      <div class="tablewrap" style="border:none">
+      <table style="min-width:0">
+        <thead><tr><th>Track</th><th>Target h</th><th>Actual h</th></tr></thead>
+        <tbody id="timeBudget"></tbody>
+      </table>
+      </div>
+      <p class="hint">Target hours are the plan; actual is what you logged. Gaps here explain everything else.</p>
+    </div>
+
+    <div class="card">
+      <header><h2>🚨 Risk monitor</h2></header>
+      <div id="autoRisks"></div>
+      <div class="divider"></div>
+      <label class="check"><input type="checkbox" id="f_risk1"><span>Searlo revenue declining 2 months running</span></label>
+      <label class="check"><input type="checkbox" id="f_risk2"><span>Zero RenderKit customer interviews this month</span></label>
+      <label class="check"><input type="checkbox" id="f_risk3"><span>An application window closed unfiled</span></label>
+      <label class="check"><input type="checkbox" id="f_risk4"><span>Funds seasoning interrupted / undocumented deposit</span></label>
+      <label class="check"><input type="checkbox" id="f_risk5"><span>Math prep skipped 3+ days running</span></label>
+      <label class="stack" for="f_riskNote">Mitigation note</label>
+      <textarea id="f_riskNote" placeholder="What am I doing about the boxes that are ticked?"></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KANBAN ============ -->
+<section class="panel" id="p-kanban" role="tabpanel" hidden>
+  <div class="kb-tools">
+    <button class="btn primary" id="btnNewCard">+ New card</button>
+    <select id="kbFilter" style="width:auto"><option value="">All tracks</option></select>
+    <select id="kbSort" style="width:auto">
+      <option value="manual">Manual order</option>
+      <option value="due">Sort by due date</option>
+      <option value="prio">Sort by priority</option>
+    </select>
+    <button class="btn ghost sm" id="btnArchive" title="Delete every card in Done">Clear Done</button>
+    <button class="btn ghost sm" id="btnSeed" title="Restore the starter board">Restore starter board</button>
+    <span class="hint" style="margin-left:auto">Drag cards, or use ◀ ▶ on touch.</span>
+  </div>
+  <div class="kb" id="kb"></div>
+</section>
+
+<!-- ============ STUDY ABROAD ============ -->
+<section class="panel" id="p-abroad" role="tabpanel" hidden>
+  <div class="kpis" id="abroadKpis"></div>
+
+  <div class="cards" style="margin-bottom:16px">
+    <div class="card span2">
+      <header>
+        <h2>🌍 Application CRM</h2>
+        <button class="btn sm ghost" id="btnResetCrm" title="Restore shortlist defaults, keeping nothing">Reset statuses</button>
+      </header>
+      <div class="filters">
+        <select id="crmCountry"><option value="">All countries</option></select>
+        <select id="crmLayer">
+          <option value="">All layers</option>
+          <option>Tier 1</option><option>Tier 2</option><option>Stretch</option><option>Scholarship</option><option>Blocked</option>
+        </select>
+        <select id="crmStatus"><option value="">All statuses</option></select>
+        <input id="crmSearch" type="search" placeholder="Search university / program…">
+        <span class="hint" id="crmCount"></span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>University</th><th>Program</th><th>Country</th><th>Tuition/yr</th>
+            <th>Gate</th><th>Next window</th><th>Layer</th><th style="min-width:130px">Status</th><th style="min-width:160px">My note</th>
+          </tr></thead>
+          <tbody id="crmBody"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:10px">Shortlist compiled from the research tracker (2026-07-21 sweep). Windows marked <em>proj.</em> are prior-cycle patterns projected forward — re-verify on the official page before acting. Status and notes save locally.</p>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <header><h2>⏳ Deadline timeline</h2></header>
+      <ul class="tl" id="timeline"></ul>
+    </div>
+    <div class="card">
+      <header><h2>📄 Document vault checklist</h2></header>
+      <div id="docs"></div>
+      <label class="stack" for="f_docNote">Vault note</label>
+      <textarea id="f_docNote" placeholder="Where the originals live, what's pending, courier refs…"></textarea>
+    </div>
+    <div class="card">
+      <header><h2>🧪 Entrance-exam prep</h2></header>
+      <p class="hint" style="margin-bottom:10px">One CISIA-family syllabus feeds four gates: CEnT-S (Sapienza), English TOLC-I (Trento), the SH online exam (Hungary), and CTU Prague. ~70% math/logic · 20% reasoning · 10% bio/chem.</p>
+      <label class="row"><span>Prep streak (days)</span><input id="f_prepStreak" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Total prep hours</span><input id="f_prepHours" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Last mock score /100</span><input id="f_mock" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>CEnT-S target</span><output class="readout">≥ 60 / 100</output></label>
+      <label class="row"><span>TOLC-I target</span><output class="readout">≥ 70 / 100</output></label>
+      <label class="stack" for="f_prepGaps">Weak-topic gap list</label>
+      <textarea id="f_prepGaps" placeholder="logarithms, trig identities, probability…"></textarea>
+    </div>
+    <div class="card">
+      <header><h2>💶 Visa funds model</h2></header>
+      <label class="row"><span>Funds pool (EUR)</span><input id="f_pool" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Seasoning started</span><input id="f_seasonStart" type="date"></label>
+      <label class="row"><span>Months seasoned</span><output class="readout" id="o_season">—</output></label>
+      <label class="row"><span>Target tuition ceiling</span><input id="f_tuitionCap" type="number" min="0" step="any" inputmode="decimal" placeholder="6000"></label>
+      <p class="hint" style="margin:10px 0">Year-1 need = tuition + national subsistence proof + ~€800–1,200 ancillary. Baltic subsistence proofs re-verified 2026-07-21: LT €8,077/yr, LV €9,360/yr — both recurring, not one-time.</p>
+      <div id="fundsFit"></div>
+      <label class="stack" for="f_fundsNote">Source ledger note</label>
+      <textarea id="f_fundsNote" placeholder="One line per source: date · amount · origin document."></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HEALTH ============ -->
+<section class="panel" id="p-health" role="tabpanel" hidden>
+  <div class="kpis" id="healthKpis"></div>
+  <div class="cards">
+    <div class="card">
+      <header><h2>🧠 Log today</h2></header>
+      <label class="row"><span>Date</span><input id="h_date" type="date"></label>
+      <label class="row"><span>Sleep (hours)</span><input id="h_sleep" type="number" min="0" max="24" step="0.5" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Mood (1–10)</span><input id="h_mood" type="number" min="1" max="10" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Anxiety (1–10)</span><input id="h_anx" type="number" min="1" max="10" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Deep work (hours)</span><input id="h_deep" type="number" min="0" max="24" step="0.5" inputmode="decimal" placeholder="0"></label>
+      <div class="divider"></div>
+      <h3 style="margin-bottom:6px">Medication</h3>
+      <div id="medRows"></div>
+      <button class="btn sm ghost" id="btnAddMed">+ Add medication</button>
+      <p class="hint" style="margin-top:8px">Medication names are stored only in this browser. Nothing is uploaded and nothing is in the published source.</p>
+      <div class="divider"></div>
+      <label class="stack" for="h_note">Note</label>
+      <textarea id="h_note" placeholder="Anything worth remembering about today."></textarea>
+      <button class="btn primary" id="btnSaveDay" style="margin-top:10px;width:100%;justify-content:center">Save day</button>
+    </div>
+    <div class="card">
+      <header><h2>📈 Last 14 days</h2><button class="btn sm ghost" id="btnExportHealth">CSV</button></header>
+      <h3>Sleep — red below 6h</h3><div class="spark" id="sparkSleep"></div>
+      <h3 style="margin-top:14px">Mood</h3><div class="spark" id="sparkMood"></div>
+      <h3 style="margin-top:14px">Anxiety — red above 7</h3><div class="spark" id="sparkAnx"></div>
+      <h3 style="margin-top:14px">Deep work hours</h3><div class="spark" id="sparkDeep"></div>
+    </div>
+    <div class="card span2">
+      <header><h2>🗂 History</h2><span class="hint" id="healthCount"></span></header>
+      <div class="log" id="healthLog"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINANCE ============ -->
+<section class="panel" id="p-money" role="tabpanel" hidden>
+  <div class="cards">
+    <div class="card">
+      <header><h2>💰 Monthly ledger</h2></header>
+      <label class="row"><span>Salary</span><input id="f_mSalary" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>SaaS revenue</span><input id="f_mSaas" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Freelance / other</span><input id="f_mOther" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Total in</span><output class="readout" id="o_in">—</output></label>
+      <div class="divider"></div>
+      <label class="row"><span>Living expenses</span><input id="f_eLiving" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Tools / infra</span><input id="f_eTools" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Application &amp; doc fees</span><input id="f_eFees" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Total out</span><output class="readout" id="o_out">—</output></label>
+      <div class="divider"></div>
+      <label class="row"><span>Net / month</span><output class="readout" id="o_net">—</output></label>
+      <label class="row"><span>Save rate</span><output class="readout" id="o_saverate">—</output></label>
+    </div>
+    <div class="card">
+      <header><h2>🏦 Funds legitimacy checklist</h2></header>
+      <p class="hint" style="margin-bottom:10px">Every deposit needs an origin document. No borrowed show-money — it reads as a fraud pattern and risks a ban.</p>
+      <div id="fundsChecks"></div>
+      <label class="stack" for="f_fundsGaps">Open gaps</label>
+      <textarea id="f_fundsGaps" placeholder="What's still undocumented?"></textarea>
+    </div>
+    <div class="card">
+      <header><h2>🎯 Savings goal</h2></header>
+      <label class="row"><span>Goal (EUR)</span><input id="f_goal" type="number" min="0" step="any" inputmode="decimal" placeholder="12000"></label>
+      <label class="row"><span>Saved so far (EUR)</span><input id="f_saved" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label class="row"><span>Progress</span><output class="readout" id="o_goalpct">—</output></label>
+      <label class="row"><span>Months at current net</span><output class="readout" id="o_goaleta">—</output></label>
+      <p class="hint" style="margin-top:10px">Baseline band €10k covers the cheapest single-country year. The €12–14k stretch band is what most of the Baltic set actually needs once the recurring subsistence proof is counted.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BUILD ============ -->
+<section class="panel" id="p-build" role="tabpanel" hidden>
+  <div class="cards">
+    <div class="card">
+      <header><h2>🚀 RenderKit validation funnel</h2></header>
+      <label class="row"><span>Outreach sent</span><input id="f_vOut" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Replies</span><input id="f_vRep" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Interviews held</span><input id="f_vInt" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Demos</span><input id="f_vDemo" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Registrations</span><input id="f_vReg" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Paying customers</span><input id="f_vPay" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <div class="divider"></div>
+      <label class="row"><span>Reply rate</span><output class="readout" id="o_replyRate">—</output></label>
+      <label class="row"><span>Demo → paying</span><output class="readout" id="o_closeRate">—</output></label>
+      <label class="row"><span>Outreach → paying</span><output class="readout" id="o_e2e">—</output></label>
+      <label class="stack" for="f_vLearn">Sharpest thing a customer said this week</label>
+      <textarea id="f_vLearn" placeholder="Their words, not your paraphrase."></textarea>
+    </div>
+    <div class="card">
+      <header><h2>💼 Remote job backup</h2></header>
+      <label class="row"><span>Applications sent</span><input id="f_jApp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Screens</span><input id="f_jScr" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Interviews</span><input id="f_jInt" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="row"><span>Offers</span><input id="f_jOff" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <p class="hint" style="margin-top:8px">The job is not a distraction from the plan — every documented salary credit is a visa document.</p>
+      <label class="stack" for="f_jNote">Pipeline note</label>
+      <textarea id="f_jNote" placeholder="Company · stage · next step · date"></textarea>
+    </div>
+    <div class="card">
+      <header><h2>📚 University semester</h2></header>
+      <label class="row"><span>Semester ends</span><input id="f_semEnd" type="date"></label>
+      <label class="stack">Locked class blocks</label>
+      <div id="classBlocks"></div>
+      <button class="btn sm ghost" id="btnAddBlock">+ Add block</button>
+      <label class="stack" for="f_assign">Assignments &amp; exams</label>
+      <textarea id="f_assign" placeholder="Course · deliverable · due date" style="min-height:100px"></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEW ============ -->
+<section class="panel" id="p-review" role="tabpanel" hidden>
+  <div class="cards">
+    <div class="card">
+      <header><h2>⚠️ CEO review — this week</h2></header>
+      <label class="row"><span>Week ending</span><input id="r_date" type="date"></label>
+      <label class="stack" for="r_wins">Wins</label><textarea id="r_wins" placeholder="What actually moved."></textarea>
+      <label class="stack" for="r_probs">Problems</label><textarea id="r_probs" placeholder="What is stuck, and why."></textarea>
+      <label class="stack" for="r_top3">Next week — top 3</label><textarea id="r_top3" placeholder="1.&#10;2.&#10;3."></textarea>
+      <label class="stack" for="r_verdict">Verdict</label>
+      <select id="r_verdict"><option>Continue</option><option>Double down</option><option>Pivot</option><option>Stop</option></select>
+      <button class="btn primary" id="btnSaveReview" style="margin-top:12px;width:100%;justify-content:center">Save review</button>
+    </div>
+    <div class="card span2" style="grid-column:span 1">
+      <header><h2>📜 Review history</h2><span class="hint" id="reviewCount"></span></header>
+      <div class="log" id="reviewLog"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="cardDlg">
+  <form method="dialog" id="cardForm">
+    <h2 id="cardDlgTitle">New card</h2>
+    <label class="stack" for="c_title">Title</label>
+    <input id="c_title" required maxlength="140" placeholder="What needs doing">
+    <label class="stack" for="c_note">Note</label>
+    <textarea id="c_note" maxlength="600" placeholder="Detail, link, source"></textarea>
+    <div class="drow">
+      <div><label class="stack" for="c_track">Track</label><select id="c_track"></select></div>
+      <div><label class="stack" for="c_prio">Priority</label>
+        <select id="c_prio"><option value="3">High</option><option value="2" selected>Normal</option><option value="1">Low</option></select>
+      </div>
+    </div>
+    <div class="drow">
+      <div><label class="stack" for="c_due">Due</label><input id="c_due" type="date"></div>
+      <div><label class="stack" for="c_col">Column</label><select id="c_col"></select></div>
+    </div>
+    <footer>
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn danger" value="delete" id="c_delete" formnovalidate hidden>Delete</button>
+      <button class="btn primary" value="save" id="c_save">Save</button>
+    </footer>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+/* =========================================================================
+   Founder OS v3 — single file, no dependencies, no network.
+   Every byte of user data lives in localStorage under KEY. Nothing leaves
+   the browser. The published source ships empty on purpose.
+   ========================================================================= */
+
+const KEY = "founder-os.v3";
+const TODAY = new Date();
+const iso = d => new Date(d).toISOString().slice(0,10);
+const $  = (s,r=document) => r.querySelector(s);
+const $$ = (s,r=document) => [...r.querySelectorAll(s)];
+const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => "c" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+/* BLANK is plain JSON, so a JSON round-trip is an exact clone and costs no API dependency. */
+const clone = o => JSON.parse(JSON.stringify(o));
+const daysBetween = (a,b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+
+/* ---------- static reference data (public research, no personal data) ---------- */
+
+const COLUMNS = [
+  { id:"backlog", name:"Backlog",  color:"#6b7a94" },
+  { id:"week",    name:"This week",color:"#4d8dff" },
+  { id:"doing",   name:"Doing",    color:"#8b5cf6" },
+  { id:"blocked", name:"Blocked",  color:"#ff5d5d" },
+  { id:"done",    name:"Done",     color:"#2ecc8f" },
+];
+
+const TRACKS = {
+  abroad:   { label:"Study abroad", color:"#4d8dff" },
+  funds:    { label:"Funds & visa", color:"#2ecc8f" },
+  exam:     { label:"Exam prep",    color:"#f5a623" },
+  docs:     { label:"Documents",    color:"#8b5cf6" },
+  searlo:   { label:"Searlo",       color:"#ff5d5d" },
+  renderkit:{ label:"RenderKit",    color:"#00c2c7" },
+  uni:      { label:"University",   color:"#c084fc" },
+  health:   { label:"Health",       color:"#f472b6" },
+};
+
+/* Starter board — process tasks pulled from the research tracker.
+   Public information only: no names, numbers, or documents. */
+const SEED_CARDS = [
+  { t:"Confirm RGS result and record the outcome", n:"Result was due ~15 Jul 2026 by email. Check the portal and the spam folder. Either way it does not change the Italy track.", track:"abroad", col:"week", prio:3, due:"2026-07-22" },
+  { t:"Create CIMEA account, check Statement of Comparability", n:"cimea.diplo-me.eu — confirm whether HSC needs a SoC and that the apostilled scans meet upload specs. ~€150–300, decision not payment.", track:"docs", col:"week", prio:3, due:"2026-07-28" },
+  { t:"Math + logic, 60 min/day", n:"One CISIA-family syllabus serves CEnT-S, English TOLC-I, the SH exam and CTU. 70% math/logic, 20% reasoning, 10% bio/chem from October.", track:"exam", col:"doing", prio:3, due:"" },
+  { t:"Baseline mock, then build the gap list", n:"CISIA practice area. The score does not matter; the list of weak topics does.", track:"exam", col:"week", prio:2, due:"2026-07-26" },
+  { t:"Apostille the birth certificate", n:"HSC and SSC bundles were apostilled 23 Nov 2025. The birth certificate still has none.", track:"docs", col:"backlog", prio:2, due:"" },
+  { t:"Get the medical certificate", n:"Not started. Required by several non-EU application files; usually enrollment or visa stage rather than application.", track:"docs", col:"backlog", prio:2, due:"" },
+  { t:"e-TIN registration at the NBR portal", n:"Free, about 30 minutes, online. Prerequisite for filing the return that legitimises own income.", track:"funds", col:"week", prio:3, due:"" },
+  { t:"File the FY2025–26 tax return", n:"BD fiscal year closed 30 Jun 2026, filing window open now. Declared income matching bank credits is the strongest legitimacy document available.", track:"funds", col:"backlog", prio:3, due:"2026-09-30" },
+  { t:"Salary certificate + 6 months of pay slips", n:"Ask HR. Route salary to the primary fund account if it is not already.", track:"funds", col:"backlog", prio:2, due:"" },
+  { t:"Consolidate every source into one primary account", n:"Seasoning clock starts on the deposit date. Log date, amount, source and origin document for each one.", track:"funds", col:"doing", prio:3, due:"" },
+  { t:"Padua Round 1 opens — file immediately", n:"Pattern: opens ~2 Nov 2026, closes ~2 Feb 2027. Document-ranked, no entrance test reported. Earliest live shot of the whole portfolio.", track:"abroad", col:"backlog", prio:3, due:"2026-11-02" },
+  { t:"Genoa UniGeApply reopens", n:"Pattern: late Nov 2026 to ~20 Mar 2027. No entrance test, €30 covers two courses. Highest-certainty route in the Italy portfolio.", track:"abroad", col:"backlog", prio:3, due:"2026-11-25" },
+  { t:"Lock the two Stipendium Hungaricum picks", n:"SH caps every applicant at exactly two program choices. Reputation picks are Óbuda and Szeged; admission-odds picks are Pannonia and Miskolc, both interview-only with no written maths test.", track:"abroad", col:"backlog", prio:3, due:"2026-11-10" },
+  { t:"SH 2027/28 portal opens", n:"apply.stipendiumhungaricum.hu, expected ~15 Nov 2026. Online deadline ~15 Jan 2027 14:00 CET, plus a hardcopy box at SHED about three days later.", track:"abroad", col:"backlog", prio:3, due:"2026-11-15" },
+  { t:"Email KVK Klaipėda about the Sept-2027 window", n:"Cheapest credible Lithuania route and the easiest English floor in the whole project. Next non-EU cycle expected Dec 2026 or Jan 2027.", track:"abroad", col:"backlog", prio:2, due:"2026-12-01" },
+  { t:"Resolve the RTU course-308 campus question", n:"Riga at ~€4.7k is blocked on funds; Liepāja at ~€3k fits the stretch band. Ask admission@rtu.lv — the answer alone decides the verdict.", track:"abroad", col:"backlog", prio:2, due:"" },
+  { t:"Register the Trento guest account early", n:"Portal support recommends at least three working days before any deadline. English TOLC-I, session-1 only, no retake that cycle, 25 non-EU seats.", track:"abroad", col:"backlog", prio:2, due:"2026-12-10" },
+  { t:"Weekly: check the five Italian call pages", n:"acsai.di.uniroma1.it · corsi.unige.it · apply.unipd.it · corsi.unitn.it · engineering-sciences.uniroma2.it. Weekly from October.", track:"abroad", col:"backlog", prio:2, due:"" },
+  { t:"Draft the motivation letter skeleton", n:"Genoa and Padua are document-ranked, so the letter is the whole gate. Refine once the 2027 calls publish their exact ask.", track:"abroad", col:"backlog", prio:2, due:"" },
+  { t:"Ten RenderKit customer interviews", n:"No build decisions until the interviews are done. Record their words verbatim.", track:"renderkit", col:"backlog", prio:3, due:"" },
+  { t:"Searlo: hold MRR flat while the abroad track runs", n:"Cash cover for the whole plan. Flat is a win this quarter; growth is upside.", track:"searlo", col:"backlog", prio:2, due:"" },
+  { t:"Protect the locked class blocks", n:"Nothing else gets scheduled on top of them. Everything else moves around them.", track:"uni", col:"backlog", prio:2, due:"" },
+  { t:"Sleep floor: 7 hours, no exceptions", n:"Below 6 hours repeatedly is a listed risk trigger, not a productivity trade.", track:"health", col:"doing", prio:3, due:"" },
+];
+
+/* Shortlist compiled from the research tracker, 2026-07-21 sweep.
+   Public university information. Windows marked proj. are projected patterns. */
+const CRM = [
+  { u:"Genoa", p:"Computer Engineering BEng", c:"🇮🇹 Italy", fee:"ISEE €300–3,000", gate:"No entrance test", win:"~late Nov 2026 → 20 Mar 2027 (proj.)", layer:"Tier 1", w:"2026-11-25" },
+  { u:"Padua", p:"Information Engineering BSc", c:"🇮🇹 Italy", fee:"€2,739–3,075 → ISEE cut", gate:"Document ranking", win:"R1 ~2 Nov 2026 → 2 Feb 2027 (proj.)", layer:"Tier 1", w:"2026-11-02" },
+  { u:"Trento", p:"Computer Science BSc", c:"🇮🇹 Italy", fee:"€0–6,000 score-banded", gate:"English TOLC-I, floor 18/50", win:"~mid-Dec 2026 → late Mar 2027 (proj.)", layer:"Tier 1", w:"2026-12-15" },
+  { u:"Tor Vergata", p:"Engineering Sciences BSc (ICT)", c:"🇮🇹 Italy", fee:"€0 if ISEE ≤ €26k", gate:"Unconfirmed for Category C", win:"~12 Jan 2027 (proj.)", layer:"Tier 2", w:"2027-01-12" },
+  { u:"Sapienza", p:"Applied CS & AI (ACSAI)", c:"🇮🇹 Italy", fee:"€300–500 flat", gate:"CEnT-S, 55q/110min, −0.25 wrong", win:"~Dec 2026 → May 2027 (proj.)", layer:"Tier 2", w:"2026-12-20" },
+  { u:"Pavia + Milano + Bicocca", p:"Joint BSc Artificial Intelligence", c:"🇮🇹 Italy", fee:"ISEE €156–400", gate:"SAT ≥ 979, non-EU only", win:"→ ~18 May 2027", layer:"Stretch", w:"2027-05-18" },
+  { u:"Stipendium Hungaricum", p:"BSc CS — two picks only", c:"🇭🇺 Hungary", fee:"€0 + stipend + dorm", gate:"Online exam or interview", win:"Portal ~15 Nov 2026 → 15 Jan 2027", layer:"Scholarship", w:"2027-01-15" },
+  { u:"Pannonia (Veszprém)", p:"Computer Science BSc", c:"🇭🇺 Hungary", fee:"€3,800 self-fund / €0 SH", gate:"Oral interview only", win:"SH ~15 Jan 2027 · self ~Feb 2027", layer:"Tier 1", w:"2027-01-15" },
+  { u:"Miskolc", p:"Computer Science Engineering BSc", c:"🇭🇺 Hungary", fee:"€6,000 self-fund / €0 SH", gate:"Interview, rubric ≥60/100", win:"Early close ~30 Apr for BD", layer:"Tier 2", w:"2027-04-30" },
+  { u:"Óbuda", p:"Computer Science Engineering BSc", c:"🇭🇺 Hungary", fee:"€0 via SH", gate:"Online maths exam", win:"Via SH cycle", layer:"Scholarship", w:"2027-01-15" },
+  { u:"Szeged", p:"Computer Science BSc", c:"🇭🇺 Hungary", fee:"€0 via SH", gate:"Online maths exam", win:"Via SH cycle", layer:"Scholarship", w:"2027-01-15" },
+  { u:"UHK Hradec Králové", p:"Applied Informatics BSc", c:"🇨🇿 Czechia", fee:"€3,000", gate:"Interview only, no written test", win:"~Mar 2027 (proj.)", layer:"Tier 2", w:"2027-03-31" },
+  { u:"CZU Prague", p:"Informatics BSc (INFOA)", c:"🇨🇿 Czechia", fee:"€3,265", gate:"Remote SCIO GAP test", win:"~Mar 2027 (proj.)", layer:"Tier 2", w:"2027-03-31" },
+  { u:"CTU Prague", p:"Informatics BSc", c:"🇨🇿 Czechia", fee:"€5,250", gate:"Maths exam, remote SCIO option", win:"Opens ~Jan 2027 (proj.)", layer:"Tier 2", w:"2027-01-31" },
+  { u:"VSB-TUO Ostrava", p:"Computer Science BSc", c:"🇨🇿 Czechia", fee:"~€4,080", gate:"Format unconfirmed", win:"~Feb 2027 (proj.)", layer:"Stretch", w:"2027-02-28" },
+  { u:"Kauno kolegija", p:"Prof. Bachelor Computing (Software Systems)", c:"🇱🇹 Lithuania", fee:"€3,100", gate:"50% average bar", win:"~Dec 2026 → May 2027 (proj.)", layer:"Tier 2", w:"2026-12-01" },
+  { u:"KVK Klaipėda", p:"Informatics BSc", c:"🇱🇹 Lithuania", fee:"€3,600", gate:"B1 English, weighted grades", win:"Opens ~Dec 2026 / Jan 2027 (proj.)", layer:"Tier 2", w:"2026-12-15" },
+  { u:"Panevėžio kolegija", p:"Informatics Engineering BSc", c:"🇱🇹 Lithuania", fee:"€3,500", gate:"B1 English floor", win:"~1 Jul 2027 (proj.)", layer:"Stretch", w:"2027-07-01" },
+  { u:"VILNIUS TECH", p:"Information Technologies BSc", c:"🇱🇹 Lithuania", fee:"€4,950 (−25/50% scholarship)", gate:"OMPT maths + scholarship interview", win:"Scholarship ~20 Apr · general ~15 Jun 2027", layer:"Stretch", w:"2027-04-20" },
+  { u:"KTU", p:"Informatics BSc", c:"🇱🇹 Lithuania", fee:"€4,201", gate:"Standard non-EU review", win:"~mid-Oct 2026 pattern, unpublished", layer:"Stretch", w:"2026-10-15" },
+  { u:"LBTU (Jelgava)", p:"Prof. Bachelor IT for Sustainable Development", c:"🇱🇻 Latvia", fee:"€2,750", gate:"Maths satisfactory, 65% average", win:"~15 Jun 2027 (proj.)", layer:"Tier 2", w:"2027-06-15" },
+  { u:"Ventspils UAS", p:"Computer Science BSc", c:"🇱🇻 Latvia", fee:"€3,000", gate:"60% average, pass maths + English", win:"~1 Jan 2027 open (proj.)", layer:"Tier 2", w:"2027-01-01" },
+  { u:"RTU Liepāja Academy", p:"Computer Science BSc", c:"🇱🇻 Latvia", fee:"~€3,000 unverified", gate:"Standard RTU review", win:"~15 Jul 2027 (proj.)", layer:"Stretch", w:"2027-07-15" },
+  { u:"University of Latvia", p:"Computer Science BSc", c:"🇱🇻 Latvia", fee:"€3,340", gate:"Maths ≥8/10 + SAT ≥1200", layer:"Blocked", win:"~1 Dec 2026 open (proj.)", w:"2026-12-01" },
+  { u:"RTU Riga", p:"Computer Systems BSc", c:"🇱🇻 Latvia", fee:"€4,700 + fees", gate:"Standard review", win:"Funds gate exceeds stretch ceiling", layer:"Blocked", w:"" },
+  { u:"TU Varna", p:"Computing BSc", c:"🇧🇬 Bulgaria", fee:"€2,806", gate:"Cohort runs only with 10+ applicants", win:"Open now → ~1 Aug 2026", layer:"Tier 2", w:"2026-08-01" },
+  { u:"TU Sofia", p:"Computer Science & Engineering BSc", c:"🇧🇬 Bulgaria", fee:"€3,000–4,000", gate:"IELTS 6.0 exact floor", win:"Rolling → ~25 Sep 2026", layer:"Tier 2", w:"2026-09-25" },
+  { u:"FAMNIT (Primorska)", p:"Computer Science BSc", c:"🇸🇮 Slovenia", fee:"€3,150", gate:"Interview for higher-migration-risk countries", win:"~Feb–Mar 2027 (proj.)", layer:"Tier 2", w:"2027-02-15" },
+  { u:"Zagreb FER", p:"Computing BSc", c:"🇭🇷 Croatia", fee:"€5,574", gate:"SAT Math ≥620 / ACT ≥26 / IB HL ≥6", win:"~May–Jul 2027 (proj.)", layer:"Stretch", w:"2027-05-15" },
+  { u:"TUKE Košice", p:"Informatics BSc", c:"🇸🇰 Slovakia", fee:"€5,000", gate:"Standard review", win:"~Apr–Jun 2027 (proj.)", layer:"Stretch", w:"2027-04-30" },
+  { u:"AGH Kraków", p:"CS / CS for Embedded Systems BSc", c:"🇵🇱 Poland", fee:"€5,000–6,000", gate:"Mandatory maths exam", win:"Oct-2027 cycle ~Apr–Jun 2027", layer:"Tier 2", w:"2027-05-01" },
+  { u:"Silesian Tech (Gliwice)", p:"Informatics BSc", c:"🇵🇱 Poland", fee:"€2,400", gate:"Maths entrance exam", win:"Oct-2027 cycle ~mid-2027 (proj.)", layer:"Tier 2", w:"2027-06-01" },
+  { u:"PWr Wrocław", p:"Applied Computer Science BSc", c:"🇵🇱 Poland", fee:"€4,160", gate:"Fully remote maths + logic exam", win:"~Apr–Jun 2027", layer:"Tier 2", w:"2027-04-15" },
+  { u:"University of Łódź", p:"Computer Science BSc (3-yr)", c:"🇵🇱 Poland", fee:"€3,000", gate:"Exam-free track, unverified", win:"Oct-2027 cycle ~mid-2027 (proj.)", layer:"Tier 2", w:"2027-06-01" },
+  { u:"Zielona Góra", p:"CS & Econometrics BSc (Info Systems)", c:"🇵🇱 Poland", fee:"€1,264", gate:"Hybrid CS degree, verify carefully", win:"Oct-2027 cycle ~mid-2027 (proj.)", layer:"Stretch", w:"2027-06-01" },
+  { u:"RGS", p:"BSc via Romanian Government Scholarship", c:"🇷🇴 Romania", fee:"€0", gate:"Average ≥7/10 — separate from Annex I", win:"Next window ~16 Feb → 31 Mar 2027", layer:"Scholarship", w:"2027-02-16" },
+  { u:"UPB Bucharest", p:"Information Engineering / IT", c:"🇷🇴 Romania", fee:"€2,600 + €100", gate:"Ministry Annex I 80/90% bar", win:"Self-fund track blocked nationally", layer:"Blocked", w:"" },
+  { u:"TalTech", p:"Cyber Security Engineering BSc", c:"🇪🇪 Estonia", fee:"€7,000, full year prepaid", gate:"Easy admission, funds gate hard", win:"~1 Apr 2027", layer:"Blocked", w:"2027-04-01" },
+];
+
+const STATUSES = ["Researching","Shortlisted","Preparing","Submitted","Interview","Offer","Accepted","Visa","Enrolled","Rejected","Dropped"];
+
+const TIMELINE = [
+  { d:"2026-08-01", t:"TU Varna window closes (secondary 20 Sep date conflicts — verify)" },
+  { d:"2026-09-25", t:"TU Sofia rolling cutoff" },
+  { d:"2026-10-01", t:"Start bio/chem refresh for CEnT-S · begin weekly call-page checks" },
+  { d:"2026-11-02", t:"Padua Round 1 opens — earliest live application of the cycle" },
+  { d:"2026-11-15", t:"Stipendium Hungaricum 2027/28 portal opens (projected)" },
+  { d:"2026-11-25", t:"Genoa UniGeApply reopens (projected)" },
+  { d:"2026-12-15", t:"Trento call expected · Lithuania kolegija windows open" },
+  { d:"2026-12-20", t:"Sapienza ACSAI call expected · CEnT-S Dec–Jan macro-period" },
+  { d:"2027-01-12", t:"Tor Vergata Category-C window opens (projected)" },
+  { d:"2027-01-15", t:"SH online deadline 14:00 CET — hardcopy at SHED ~3 days later" },
+  { d:"2027-02-02", t:"Padua Round 1 closes — hard cutoff" },
+  { d:"2027-02-16", t:"RGS 2027/28 window opens (→ 31 Mar)" },
+  { d:"2027-03-20", t:"Genoa window closes (projected) · start ISEE parificato prep" },
+  { d:"2027-04-30", t:"Miskolc early close for BD applicants · CEnT-S final retake period" },
+  { d:"2027-05-18", t:"Pavia joint BSc AI non-EU deadline (SAT required)" },
+  { d:"2027-06-30", t:"Universitaly pre-enrolment cutoff — missing it forfeits the seat" },
+  { d:"2027-07-15", t:"Visa file at the Embassy of Italy, Dhaka — direct, no New Delhi routing" },
+  { d:"2027-09-15", t:"Target enrollment" },
+];
+
+const DOC_ITEMS = [
+  "Passport valid past the intake",
+  "HSC certificate + transcript, apostilled",
+  "SSC certificate + transcript, apostilled",
+  "Birth certificate apostilled",
+  "IELTS TRF on file and still valid at intake",
+  "Certificate of eligibility for higher education",
+  "CIMEA Statement of Comparability (Italy)",
+  "Medical certificate",
+  "Motivation letter, current draft",
+  "Reference letter",
+  "Europass CV, current",
+  "Bank statements — dated ≤3 months at submission",
+  "Salary certificate + 6 months of pay slips",
+  "Tax return + TIN certificate",
+  "Sponsor affidavit + relationship proof",
+  "Origin document for every single deposit",
+];
+
+const FUNDS_ITEMS = [
+  "One primary account chosen and in use",
+  "Salary routed to the primary account",
+  "SaaS payout history exported and matched to credits",
+  "e-TIN registered",
+  "Tax return filed",
+  "Trade license applied for",
+  "Gold sold through a registered jeweller with a receipt",
+  "Co-sponsor role and amount confirmed",
+  "Ledger maintained: date · amount · source · proof",
+  "Zero borrowed show-money — verified",
+];
+
+const TIME_TRACKS = [
+  { k:"Searlo", target:"5–10" }, { k:"RenderKit", target:"10–12" },
+  { k:"Study abroad", target:"6–8" }, { k:"University", target:"8–10" },
+  { k:"Exam prep", target:"7" }, { k:"Health", target:"daily" },
+];
+
+/* ---------- state ---------- */
+
+const BLANK = { v:3, theme:"dark", tab:"p-dash", fields:{}, checks:{}, cards:[], crm:{}, health:[], reviews:[], meds:[], blocks:[] };
+let S;
+
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return clone(BLANK);
+    const p = JSON.parse(raw);
+    return Object.assign(clone(BLANK), p);
+  } catch (e) {
+    console.warn("Could not read saved state, starting clean.", e);
+    return clone(BLANK);
+  }
+}
+let saveTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(S));
+      const d = $("#savedot"); d.classList.add("on"); setTimeout(()=>d.classList.remove("on"), 700);
+    } catch (e) {
+      toast("Save failed — storage may be full or blocked.");
+      console.error(e);
+    }
+  }, 220);
+}
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+/* ---------- generic field binding ---------- */
+
+function bindFields(){
+  $$("input[id^='f_'],textarea[id^='f_'],select[id^='f_']").forEach(el => {
+    const k = el.id;
+    if (el.type === "checkbox") {
+      el.checked = !!S.checks[k];
+      el.addEventListener("change", () => { S.checks[k] = el.checked; save(); derive(); });
+    } else {
+      if (S.fields[k] != null) el.value = S.fields[k];
+      el.addEventListener("input", () => { S.fields[k] = el.value; save(); derive(); });
+    }
+  });
+}
+
+/* ---------- derived numbers ---------- */
+
+function fmt(n, dp=0){ return Number.isFinite(n) ? n.toLocaleString(undefined,{maximumFractionDigits:dp}) : "—"; }
+
+function derive(){
+  const g = id => num(S.fields[id]);
+  const fx = g("f_fx") || 130;
+
+  /* runway */
+  const savings = g("f_savings"), burn = g("f_burn"), inc = g("f_income");
+  const net = burn - inc;
+  const runway = savings <= 0 ? 0 : (net <= 0 ? Infinity : savings / net);
+  $("#o_runway").textContent = savings <= 0 ? "—" : (net <= 0 ? "∞ (income covers burn)" : fmt(runway,1) + " months");
+  $("#o_eur").textContent = savings > 0 ? "€" + fmt(savings / fx) : "—";
+
+  /* monthly ledger */
+  const tin = g("f_mSalary") + g("f_mSaas") + g("f_mOther");
+  const tout = g("f_eLiving") + g("f_eTools") + g("f_eFees");
+  $("#o_in").textContent = tin ? fmt(tin) : "—";
+  $("#o_out").textContent = tout ? fmt(tout) : "—";
+  $("#o_net").textContent = (tin||tout) ? fmt(tin - tout) : "—";
+  $("#o_saverate").textContent = tin > 0 ? fmt((tin - tout) / tin * 100, 1) + " %" : "—";
+
+  /* savings goal */
+  const goal = g("f_goal"), saved = g("f_saved"), monthlyNet = (tin - tout) / fx;
+  $("#o_goalpct").textContent = goal > 0 ? fmt(saved / goal * 100, 1) + " %" : "—";
+  $("#o_goaleta").textContent = (goal > saved && monthlyNet > 0) ? fmt((goal - saved) / monthlyNet, 1) + " months" : (goal > 0 && goal <= saved ? "reached" : "—");
+
+  /* seasoning */
+  const ss = S.fields.f_seasonStart;
+  $("#o_season").textContent = ss ? fmt(daysBetween(ss, TODAY) / 30.44, 1) + " months" : "—";
+
+  /* funnel */
+  const out = g("f_vOut"), rep = g("f_vRep"), demo = g("f_vDemo"), pay = g("f_vPay");
+  $("#o_replyRate").textContent = out > 0 ? fmt(rep / out * 100, 1) + " %" : "—";
+  $("#o_closeRate").textContent = demo > 0 ? fmt(pay / demo * 100, 1) + " %" : "—";
+  $("#o_e2e").textContent = out > 0 ? fmt(pay / out * 100, 2) + " %" : "—";
+
+  renderKpis(runway, savings, fx);
+  renderFundsFit(fx);
+  renderAutoRisks();
+  renderHealthKpis();
+  renderAbroadKpis();
+}
+
+function renderKpis(runway, savings, fx){
+  const H = last(14);
+  const avg = k => H.length ? H.reduce((a,d)=>a+num(d[k]),0) / H.filter(d=>d[k]!=="" && d[k]!=null).length : NaN;
+  const sleep = avg("sleep"), anx = avg("anx");
+  const open = S.cards.filter(c => c.col !== "done").length;
+  const soon = S.cards.filter(c => c.due && c.col !== "done" && daysBetween(TODAY, c.due) >= 0 && daysBetween(TODAY, c.due) <= 14).length;
+  const over = S.cards.filter(c => c.due && c.col !== "done" && daysBetween(TODAY, c.due) < 0).length;
+  const nextD = TIMELINE.map(t => t.d).filter(d => new Date(d) >= TODAY).sort()[0];
+
+  const k = [
+    { k:"Cash runway", v: savings <= 0 ? "—" : (runway === Infinity ? "∞" : fmt(runway,1)), m:"months", cls: runway === Infinity ? "ok" : (savings<=0 ? "" : runway < 3 ? "bad" : runway < 6 ? "warn" : "ok") },
+    { k:"Open cards", v: open, m: over ? over + " overdue" : soon + " due ≤14d", cls: over ? "bad" : soon ? "warn" : "" },
+    { k:"Avg sleep 14d", v: Number.isFinite(sleep) ? fmt(sleep,1) : "—", m:"hours", cls: Number.isFinite(sleep) ? (sleep < 6 ? "bad" : sleep < 7 ? "warn" : "ok") : "" },
+    { k:"Avg anxiety 14d", v: Number.isFinite(anx) ? fmt(anx,1) : "—", m:"of 10", cls: Number.isFinite(anx) ? (anx > 7 ? "bad" : anx > 5 ? "warn" : "ok") : "" },
+    { k:"Next deadline", v: nextD ? daysBetween(TODAY, nextD) : "—", m:"days away", cls: nextD ? (daysBetween(TODAY,nextD) < 14 ? "warn" : "") : "" },
+    { k:"Savings", v: savings > 0 ? "€" + fmt(savings / fx) : "—", m:"in EUR at current rate", cls:"" },
+  ];
+  $("#kpis").innerHTML = k.map(x =>
+    `<div class="kpi ${x.cls}"><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div><div class="m">${esc(x.m)}</div></div>`).join("");
+}
+
+function renderFundsFit(fx){
+  const pool = num(S.fields.f_pool);
+  const bands = [
+    { n:"Baseline €10k", need:10000 },
+    { n:"Stretch €12k", need:12000 },
+    { n:"Stretch ceiling €14k", need:14000 },
+  ];
+  $("#fundsFit").innerHTML = bands.map(b => {
+    const ok = pool >= b.need;
+    const pct = b.need ? Math.min(100, pool / b.need * 100) : 0;
+    return `<div style="margin:8px 0">
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--text-2)">
+        <span>${esc(b.n)}</span><span class="${ok?'':''}" style="font-family:var(--mono);color:${ok?'var(--ok)':'var(--text-3)'}">${fmt(pct,0)}%</span>
+      </div>
+      <div style="height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:3px">
+        <div style="height:100%;width:${pct}%;background:${ok?'var(--ok)':'var(--warn)'}"></div>
+      </div></div>`;
+  }).join("");
+}
+
+function renderAutoRisks(){
+  const H = last(7), out = [];
+  const vals = k => H.map(d => num(d[k])).filter(n => n > 0);
+  const sleeps = vals("sleep"), anxs = vals("anx");
+  if (sleeps.length >= 3 && sleeps.filter(s => s < 6).length >= 3) out.push(["bad","Sleep below 6h on 3+ of the last 7 logged days"]);
+  if (anxs.length >= 3 && anxs.filter(a => a > 7).length >= 3) out.push(["bad","Anxiety above 7 on 3+ of the last 7 logged days"]);
+  const over = S.cards.filter(c => c.due && c.col !== "done" && daysBetween(TODAY, c.due) < 0);
+  if (over.length) out.push(["bad", over.length + " card" + (over.length>1?"s":"") + " past due"]);
+  const blocked = S.cards.filter(c => c.col === "blocked");
+  if (blocked.length >= 3) out.push(["warn", blocked.length + " cards sitting in Blocked"]);
+  if (!S.health.length) out.push(["warn","No health days logged yet — the auto-risk checks stay blind until you log some"]);
+  const ss = S.fields.f_seasonStart;
+  if (ss && daysBetween(ss, TODAY) / 30.44 < 3) out.push(["warn","Funds seasoned under 3 months — visa files want 3–6"]);
+
+  $("#autoRisks").innerHTML = out.length
+    ? out.map(([lvl,t]) => `<div style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;padding:4px 0">
+        <span style="color:var(--${lvl});flex:none">${lvl==="bad"?"●":"▲"}</span><span>${esc(t)}</span></div>`).join("")
+    : `<p class="hint">No automatic flags firing. The manual list below is still yours to keep honest.</p>`;
+}
+
+/* ---------- kanban ---------- */
+
+function seedBoard(){
+  S.cards = SEED_CARDS.map((c,i) => ({ id: uid(), title:c.t, note:c.n, track:c.track, col:c.col, prio:c.prio, due:c.due||"", ord:i }));
+}
+
+function renderKanban(){
+  const filter = $("#kbFilter").value, sort = $("#kbSort").value;
+  const kb = $("#kb");
+  kb.innerHTML = COLUMNS.map(col => {
+    let list = S.cards.filter(c => c.col === col.id && (!filter || c.track === filter));
+    if (sort === "due") list.sort((a,b) => (a.due||"9999").localeCompare(b.due||"9999"));
+    else if (sort === "prio") list.sort((a,b) => b.prio - a.prio || (a.due||"9999").localeCompare(b.due||"9999"));
+    else list.sort((a,b) => a.ord - b.ord);
+    return `<div class="col" data-col="${col.id}">
+      <header><span class="dot" style="background:${col.color}"></span>
+        <span class="name">${esc(col.name)}</span><span class="count">${list.length}</span></header>
+      <div class="list" data-col="${col.id}">${list.map(cardHTML).join("") || `<div class="empty" style="padding:12px">—</div>`}</div>
+      <button class="add" data-add="${col.id}">+ Add</button>
+    </div>`;
+  }).join("");
+  wireKanban();
+}
+
+function cardHTML(c){
+  const tr = TRACKS[c.track] || { label:c.track, color:"var(--text-3)" };
+  let due = "";
+  if (c.due) {
+    const d = daysBetween(TODAY, c.due);
+    const cls = d < 0 ? "over" : d <= 14 ? "soon" : "";
+    const rel = d < 0 ? Math.abs(d)+"d late" : d === 0 ? "today" : "in "+d+"d";
+    due = `<span class="due ${cls}" title="${esc(c.due)}">${esc(rel)}</span>`;
+  }
+  const prio = c.prio === 3 ? `<span class="tag" style="color:var(--bad);border-color:var(--bad)">HIGH</span>` : "";
+  return `<article class="kcard" draggable="true" data-id="${c.id}" style="--track:${tr.color}" tabindex="0">
+    <div class="t">${esc(c.title)}</div>
+    ${c.note ? `<div class="n">${esc(c.note)}</div>` : ""}
+    <div class="meta">
+      <span class="tag" style="color:${tr.color};border-color:${tr.color}44">${esc(tr.label)}</span>
+      ${prio}${due}
+      <span class="acts">
+        <button data-move="-1" title="Move left" aria-label="Move left">◀</button>
+        <button data-edit="1" title="Edit" aria-label="Edit">✎</button>
+        <button data-move="1" title="Move right" aria-label="Move right">▶</button>
+      </span>
+    </div></article>`;
+}
+
+let dragId = null;
+function wireKanban(){
+  $$(".kcard").forEach(el => {
+    el.addEventListener("dragstart", e => { dragId = el.dataset.id; el.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+    el.addEventListener("dragend", () => { el.classList.remove("dragging"); dragId = null; });
+    el.addEventListener("dblclick", () => openCard(el.dataset.id));
+    el.addEventListener("keydown", e => { if (e.key === "Enter") openCard(el.dataset.id); });
+  });
+  $$(".col").forEach(col => {
+    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("dragover"); });
+    col.addEventListener("dragleave", () => col.classList.remove("dragover"));
+    col.addEventListener("drop", e => {
+      e.preventDefault(); col.classList.remove("dragover");
+      if (!dragId) return;
+      const c = S.cards.find(x => x.id === dragId);
+      if (c) { c.col = col.dataset.col; c.ord = Date.now(); save(); renderKanban(); derive(); }
+    });
+  });
+  $$("[data-add]").forEach(b => b.addEventListener("click", () => openCard(null, b.dataset.add)));
+  $$("[data-edit]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); openCard(b.closest(".kcard").dataset.id); }));
+  $$("[data-move]").forEach(b => b.addEventListener("click", e => {
+    e.stopPropagation();
+    const c = S.cards.find(x => x.id === b.closest(".kcard").dataset.id);
+    const i = COLUMNS.findIndex(x => x.id === c.col) + Number(b.dataset.move);
+    if (i >= 0 && i < COLUMNS.length) { c.col = COLUMNS[i].id; c.ord = Date.now(); save(); renderKanban(); derive(); }
+  }));
+}
+
+let editingId = null;
+function openCard(id, col){
+  editingId = id;
+  const c = id ? S.cards.find(x => x.id === id) : null;
+  $("#cardDlgTitle").textContent = c ? "Edit card" : "New card";
+  $("#c_title").value = c?.title || "";
+  $("#c_note").value  = c?.note || "";
+  $("#c_track").value = c?.track || "abroad";
+  $("#c_prio").value  = String(c?.prio ?? 2);
+  $("#c_due").value   = c?.due || "";
+  $("#c_col").value   = c?.col || col || "backlog";
+  $("#c_delete").hidden = !c;
+  $("#cardDlg").showModal();
+}
+
+/* ---------- CRM ---------- */
+
+function renderCrm(){
+  const fc = $("#crmCountry").value, fl = $("#crmLayer").value, fs = $("#crmStatus").value;
+  const q = $("#crmSearch").value.trim().toLowerCase();
+  const rows = CRM.filter(r =>
+    (!fc || r.c === fc) && (!fl || r.layer === fl) &&
+    (!fs || (S.crm[key(r)]?.status || "Researching") === fs) &&
+    (!q || (r.u + " " + r.p).toLowerCase().includes(q))
+  );
+  $("#crmCount").textContent = rows.length + " of " + CRM.length + " shown";
+  $("#crmBody").innerHTML = rows.map(r => {
+    const k = key(r), st = S.crm[k] || {};
+    const d = r.w ? daysBetween(TODAY, r.w) : null;
+    const pill = r.layer === "Blocked" ? `<span class="pill closed">blocked</span>`
+      : d === null ? `<span class="pill neutral">n/a</span>`
+      : d < 0 ? `<span class="pill closed">passed</span>`
+      : d <= 60 ? `<span class="pill soon">${d}d</span>`
+      : `<span class="pill live">${d}d</span>`;
+    return `<tr>
+      <td><b>${esc(r.u)}</b></td>
+      <td>${esc(r.p)}</td>
+      <td class="num">${esc(r.c)}</td>
+      <td class="num">${esc(r.fee)}</td>
+      <td>${esc(r.gate)}</td>
+      <td>${esc(r.win)} ${pill}</td>
+      <td><span class="pill neutral">${esc(r.layer)}</span></td>
+      <td><select data-crm="${esc(k)}" data-f="status">${STATUSES.map(s =>
+          `<option${(st.status||"Researching") === s ? " selected" : ""}>${s}</option>`).join("")}</select></td>
+      <td><input data-crm="${esc(k)}" data-f="note" value="${esc(st.note || "")}" placeholder="note"></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="9" class="empty">Nothing matches those filters.</td></tr>`;
+
+  $$("[data-crm]").forEach(el => el.addEventListener("input", () => {
+    const k = el.dataset.crm;
+    S.crm[k] = Object.assign({}, S.crm[k], { [el.dataset.f]: el.value });
+    save(); renderAbroadKpis();
+  }));
+}
+const key = r => (r.u + "|" + r.p).replace(/\s+/g," ");
+
+function renderAbroadKpis(){
+  const st = r => S.crm[key(r)]?.status || "Researching";
+  const active = CRM.filter(r => !["Rejected","Dropped"].includes(st(r)) && r.layer !== "Blocked");
+  const submitted = CRM.filter(r => ["Submitted","Interview","Offer","Accepted","Visa","Enrolled"].includes(st(r)));
+  const offers = CRM.filter(r => ["Offer","Accepted","Visa","Enrolled"].includes(st(r)));
+  const upcoming = CRM.filter(r => r.w && daysBetween(TODAY, r.w) >= 0 && daysBetween(TODAY, r.w) <= 90 && r.layer !== "Blocked");
+  const cheapest = CRM.filter(r => r.layer !== "Blocked").map(r => {
+    const m = r.fee.match(/€\s?([\d,]+)/); return m ? parseInt(m[1].replace(/,/g,"")) : Infinity;
+  }).sort((a,b)=>a-b)[0];
+  const el = $("#abroadKpis");
+  if (!el) return;
+  el.innerHTML = [
+    { k:"Live options", v:active.length, m:"not blocked or dropped", cls:"" },
+    { k:"Submitted", v:submitted.length, m:"applications filed", cls: submitted.length ? "ok" : "" },
+    { k:"Offers", v:offers.length, m:"including accepted", cls: offers.length ? "ok" : "" },
+    { k:"Windows ≤90d", v:upcoming.length, m:"opening or closing", cls: upcoming.length ? "warn" : "" },
+    { k:"Cheapest tuition", v:"€"+fmt(cheapest), m:"per year, non-blocked", cls:"" },
+    { k:"Target intake", v:"Sep 2027", m:"ceiling Oct 2027", cls:"" },
+  ].map(x => `<div class="kpi ${x.cls}"><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div><div class="m">${esc(x.m)}</div></div>`).join("");
+}
+
+function renderTimeline(){
+  $("#timeline").innerHTML = TIMELINE.map(t => {
+    const d = daysBetween(TODAY, t.d);
+    const cls = d < 0 ? "over" : d <= 30 ? "soon" : "";
+    const rel = d < 0 ? "passed" : d === 0 ? "today" : d + "d";
+    return `<li${d < 0 ? ' style="opacity:.45"' : ''}>
+      <span class="d">${esc(t.d)}</span>
+      <span>${esc(t.t)}<span class="cd ${cls}">${esc(rel)}</span></span></li>`;
+  }).join("");
+}
+
+/* ---------- checklists ---------- */
+
+function renderChecklist(el, items, prefix){
+  el.innerHTML = items.map((t,i) => {
+    const k = prefix + i;
+    return `<label class="check"><input type="checkbox" data-ck="${k}"${S.checks[k] ? " checked" : ""}><span>${esc(t)}</span></label>`;
+  }).join("");
+  $$("[data-ck]", el).forEach(cb => cb.addEventListener("change", () => {
+    S.checks[cb.dataset.ck] = cb.checked; save();
+  }));
+}
+
+/* ---------- health ---------- */
+
+const last = n => S.health.slice(-n);
+
+function renderMeds(){
+  $("#medRows").innerHTML = S.meds.length ? S.meds.map((m,i) =>
+    `<div style="display:flex;gap:8px;align-items:center;margin:5px 0">
+      <input value="${esc(m.name)}" data-med="${i}" placeholder="Name and dose" style="flex:1">
+      <select data-medtime="${i}" style="width:96px">
+        <option${m.time==="Morning"?" selected":""}>Morning</option>
+        <option${m.time==="Midday"?" selected":""}>Midday</option>
+        <option${m.time==="Night"?" selected":""}>Night</option>
+      </select>
+      <button class="btn sm ghost danger" data-meddel="${i}" title="Remove" aria-label="Remove">×</button>
+    </div>`).join("") : `<p class="hint">No medications configured. Add one and it appears as a daily checkbox.</p>`;
+
+  $$("[data-med]").forEach(el => el.addEventListener("input", () => { S.meds[el.dataset.med].name = el.value; save(); renderMedChecks(); }));
+  $$("[data-medtime]").forEach(el => el.addEventListener("change", () => { S.meds[el.dataset.medtime].time = el.value; save(); renderMedChecks(); }));
+  $$("[data-meddel]").forEach(el => el.addEventListener("click", () => { S.meds.splice(el.dataset.meddel,1); save(); renderMeds(); }));
+  renderMedChecks();
+}
+function renderMedChecks(){
+  let box = $("#medChecks");
+  if (!box) { box = document.createElement("div"); box.id = "medChecks"; $("#medRows").after(box); }
+  box.innerHTML = S.meds.filter(m => m.name.trim()).map((m,i) =>
+    `<label class="check"><input type="checkbox" data-medtaken="${i}"><span>${esc(m.time)} — ${esc(m.name)}</span></label>`).join("");
+}
+
+function saveDay(){
+  const d = $("#h_date").value || iso(TODAY);
+  const entry = {
+    date:d, sleep:$("#h_sleep").value, mood:$("#h_mood").value, anx:$("#h_anx").value,
+    deep:$("#h_deep").value, note:$("#h_note").value,
+    meds: $$("[data-medtaken]").map((cb,i) => cb.checked ? (S.meds[i]?.name || "") : null).filter(Boolean),
+  };
+  const i = S.health.findIndex(x => x.date === d);
+  if (i >= 0) S.health[i] = entry; else S.health.push(entry);
+  S.health.sort((a,b) => a.date.localeCompare(b.date));
+  save(); renderHealth(); derive();
+  toast(i >= 0 ? "Updated " + d : "Logged " + d);
+}
+
+function spark(el, key, badFn, max){
+  const H = last(14);
+  el.innerHTML = H.map(d => {
+    const v = num(d[key]);
+    const h = max ? Math.max(2, Math.min(100, v / max * 100)) : 2;
+    return `<i style="height:${h}%" data-bad="${badFn(v) ? 1 : 0}" title="${esc(d.date)}: ${esc(d[key] || "—")}"></i>`;
+  }).join("") || `<span class="hint">No data yet.</span>`;
+}
+
+function renderHealth(){
+  spark($("#sparkSleep"), "sleep", v => v > 0 && v < 6, 10);
+  spark($("#sparkMood"),  "mood",  v => v > 0 && v <= 3, 10);
+  spark($("#sparkAnx"),   "anx",   v => v > 7, 10);
+  spark($("#sparkDeep"),  "deep",  () => false, 10);
+  $("#healthCount").textContent = S.health.length + " days logged";
+  $("#healthLog").innerHTML = [...S.health].reverse().slice(0,60).map((d,i) =>
+    `<div class="logitem">
+      <div class="lh"><b>${esc(d.date)}</b>
+        <span class="tag">sleep ${esc(d.sleep||"—")}h</span>
+        <span class="tag">mood ${esc(d.mood||"—")}</span>
+        <span class="tag">anx ${esc(d.anx||"—")}</span>
+        <span class="tag">deep ${esc(d.deep||"—")}h</span>
+        <button class="btn sm ghost danger" data-hdel="${esc(d.date)}" style="margin-left:auto">×</button></div>
+      ${d.meds?.length ? `<div class="hint">Taken: ${esc(d.meds.join(", "))}</div>` : ""}
+      ${d.note ? `<div style="margin-top:5px;white-space:pre-wrap">${esc(d.note)}</div>` : ""}
+    </div>`).join("") || `<div class="empty">Nothing logged yet.</div>`;
+  $$("[data-hdel]").forEach(b => b.addEventListener("click", () => {
+    S.health = S.health.filter(x => x.date !== b.dataset.hdel); save(); renderHealth(); derive();
+  }));
+}
+
+function renderHealthKpis(){
+  const el = $("#healthKpis"); if (!el) return;
+  const H = last(14);
+  const mean = k => { const v = H.map(d=>num(d[k])).filter(n=>n>0); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : NaN; };
+  const sleep = mean("sleep"), mood = mean("mood"), anx = mean("anx"), deep = mean("deep");
+  const deepTotal = H.map(d=>num(d.deep)).reduce((a,b)=>a+b,0);
+  let streak = 0;
+  for (let i = 0; i < 400; i++) {
+    const d = iso(new Date(TODAY.getTime() - i*864e5));
+    if (S.health.some(x => x.date === d)) streak++; else if (i > 0) break;
+  }
+  el.innerHTML = [
+    { k:"Sleep avg", v: Number.isFinite(sleep)?fmt(sleep,1):"—", m:"14-day hours", cls: Number.isFinite(sleep)?(sleep<6?"bad":sleep<7?"warn":"ok"):"" },
+    { k:"Mood avg", v: Number.isFinite(mood)?fmt(mood,1):"—", m:"of 10", cls: Number.isFinite(mood)?(mood<4?"bad":mood<6?"warn":"ok"):"" },
+    { k:"Anxiety avg", v: Number.isFinite(anx)?fmt(anx,1):"—", m:"of 10", cls: Number.isFinite(anx)?(anx>7?"bad":anx>5?"warn":"ok"):"" },
+    { k:"Deep work", v: fmt(deepTotal,1), m:"hours in 14 days", cls: deepTotal>=40?"ok":deepTotal>=20?"warn":"" },
+    { k:"Log streak", v: streak, m:"consecutive days", cls: streak>=7?"ok":streak>=3?"warn":"" },
+    { k:"Days logged", v: S.health.length, m:"all time", cls:"" },
+  ].map(x => `<div class="kpi ${x.cls}"><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div><div class="m">${esc(x.m)}</div></div>`).join("");
+}
+
+/* ---------- reviews ---------- */
+
+function renderReviews(){
+  $("#reviewCount").textContent = S.reviews.length + " saved";
+  $("#reviewLog").innerHTML = [...S.reviews].reverse().map(r =>
+    `<div class="logitem">
+      <div class="lh"><b>${esc(r.date)}</b><span class="tag">${esc(r.verdict)}</span>
+        <button class="btn sm ghost danger" data-rdel="${esc(r.id)}" style="margin-left:auto">×</button></div>
+      <dl>
+        ${r.wins  ? `<dt>Wins</dt><dd>${esc(r.wins)}</dd>` : ""}
+        ${r.probs ? `<dt>Problems</dt><dd>${esc(r.probs)}</dd>` : ""}
+        ${r.top3  ? `<dt>Top 3</dt><dd>${esc(r.top3)}</dd>` : ""}
+      </dl></div>`).join("") || `<div class="empty">No reviews yet. The weekly review is the only thing that keeps the rest honest.</div>`;
+  $$("[data-rdel]").forEach(b => b.addEventListener("click", () => {
+    S.reviews = S.reviews.filter(x => x.id !== b.dataset.rdel); save(); renderReviews();
+  }));
+}
+
+/* ---------- misc renderers ---------- */
+
+function renderTimeBudget(){
+  $("#timeBudget").innerHTML = TIME_TRACKS.map((t,i) =>
+    `<tr><td>${esc(t.k)}</td><td class="num">${esc(t.target)}</td>
+     <td><input type="number" min="0" step="0.5" inputmode="decimal" data-tb="${i}" value="${esc(S.fields["tb"+i] || "")}" placeholder="0"></td></tr>`).join("");
+  $$("[data-tb]").forEach(el => el.addEventListener("input", () => { S.fields["tb"+el.dataset.tb] = el.value; save(); }));
+}
+
+function renderBlocks(){
+  $("#classBlocks").innerHTML = S.blocks.length ? S.blocks.map((b,i) =>
+    `<div style="display:flex;gap:8px;margin:5px 0">
+      <input value="${esc(b)}" data-blk="${i}" placeholder="e.g. Thursday 18:00–22:00" style="flex:1">
+      <button class="btn sm ghost danger" data-blkdel="${i}" aria-label="Remove">×</button></div>`).join("")
+    : `<p class="hint">No blocks yet. These are the hours nothing else may touch.</p>`;
+  $$("[data-blk]").forEach(el => el.addEventListener("input", () => { S.blocks[el.dataset.blk] = el.value; save(); }));
+  $$("[data-blkdel]").forEach(el => el.addEventListener("click", () => { S.blocks.splice(el.dataset.blkdel,1); save(); renderBlocks(); }));
+}
+
+/* ---------- tabs, theme, io ---------- */
+
+function showTab(id){
+  $$("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.panel === id)));
+  $$(".panel").forEach(p => p.hidden = p.id !== id);
+  S.tab = id; save();
+  window.scrollTo({ top:0, behavior:"instant" });
+}
+
+function applyTheme(){
+  document.documentElement.dataset.theme = S.theme;
+}
+
+function exportJson(){
+  const blob = new Blob([JSON.stringify(S,null,2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "founder-os-backup-" + iso(TODAY) + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("Backup downloaded");
+}
+
+function importJson(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const p = JSON.parse(r.result);
+      if (typeof p !== "object" || p === null) throw new Error("not an object");
+      S = Object.assign(clone(BLANK), p);
+      save(); location.reload();
+    } catch (e) { toast("That file is not a valid Founder OS backup."); }
+  };
+  r.readAsText(file);
+}
+
+function exportHealthCsv(){
+  const head = "date,sleep,mood,anxiety,deep_work,meds_taken,note\n";
+  const rows = S.health.map(d =>
+    [d.date, d.sleep, d.mood, d.anx, d.deep, (d.meds||[]).join(";"), (d.note||"").replace(/"/g,'""')]
+      .map(v => `"${v ?? ""}"`).join(",")).join("\n");
+  const blob = new Blob([head + rows], { type:"text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "health-log-" + iso(TODAY) + ".csv";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- boot ---------- */
+
+function boot(){
+  S = load();
+  if (!S.cards.length && !localStorage.getItem(KEY)) seedBoard();
+  applyTheme();
+
+  /* selects that depend on constant data */
+  $("#kbFilter").innerHTML = `<option value="">All tracks</option>` +
+    Object.entries(TRACKS).map(([k,v]) => `<option value="${k}">${esc(v.label)}</option>`).join("");
+  $("#c_track").innerHTML = Object.entries(TRACKS).map(([k,v]) => `<option value="${k}">${esc(v.label)}</option>`).join("");
+  $("#c_col").innerHTML   = COLUMNS.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  $("#crmCountry").innerHTML = `<option value="">All countries</option>` +
+    [...new Set(CRM.map(r => r.c))].sort().map(c => `<option>${esc(c)}</option>`).join("");
+  $("#crmStatus").innerHTML  = `<option value="">All statuses</option>` + STATUSES.map(s => `<option>${esc(s)}</option>`).join("");
+
+  bindFields();
+  renderChecklist($("#docs"), DOC_ITEMS, "doc");
+  renderChecklist($("#fundsChecks"), FUNDS_ITEMS, "fund");
+  renderTimeBudget(); renderBlocks(); renderMeds();
+  renderKanban(); renderCrm(); renderTimeline(); renderHealth(); renderReviews();
+  derive();
+
+  $("#h_date").value = $("#h_date").value || iso(TODAY);
+  $("#r_date").value = $("#r_date").value || iso(TODAY);
+  showTab(S.tab || "p-dash");
+
+  /* events */
+  $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.panel); });
+  $("#btnTheme").addEventListener("click", () => { S.theme = S.theme === "dark" ? "light" : "dark"; applyTheme(); save(); });
+  $("#btnExport").addEventListener("click", exportJson);
+  $("#btnImport").addEventListener("click", () => $("#fileImport").click());
+  $("#fileImport").addEventListener("change", e => { if (e.target.files[0]) importJson(e.target.files[0]); });
+  $("#btnReset").addEventListener("click", () => {
+    if (!confirm("Erase every value stored in this browser for Founder OS?\n\nExport a backup first if you might want it back. This cannot be undone.")) return;
+    localStorage.removeItem(KEY); location.reload();
+  });
+
+  $("#btnNewCard").addEventListener("click", () => openCard(null, "week"));
+  $("#kbFilter").addEventListener("change", renderKanban);
+  $("#kbSort").addEventListener("change", renderKanban);
+  $("#btnArchive").addEventListener("click", () => {
+    const n = S.cards.filter(c => c.col === "done").length;
+    if (!n) return toast("Done column is already empty.");
+    if (!confirm("Delete " + n + " card" + (n>1?"s":"") + " from Done? This cannot be undone.")) return;
+    S.cards = S.cards.filter(c => c.col !== "done"); save(); renderKanban(); derive(); toast("Cleared " + n);
+  });
+  $("#btnSeed").addEventListener("click", () => {
+    if (!confirm("Replace the whole board with the starter set? Your current cards will be deleted.")) return;
+    seedBoard(); save(); renderKanban(); derive(); toast("Starter board restored");
+  });
+
+  $("#cardForm").addEventListener("submit", e => {
+    const action = e.submitter?.value;
+    if (action === "cancel") return;
+    if (action === "delete") {
+      S.cards = S.cards.filter(c => c.id !== editingId); save(); renderKanban(); derive(); return;
+    }
+    const data = {
+      title: $("#c_title").value.trim(), note: $("#c_note").value.trim(),
+      track: $("#c_track").value, prio: Number($("#c_prio").value),
+      due: $("#c_due").value, col: $("#c_col").value,
+    };
+    if (!data.title) return;
+    if (editingId) Object.assign(S.cards.find(c => c.id === editingId), data);
+    else S.cards.push(Object.assign({ id: uid(), ord: Date.now() }, data));
+    save(); renderKanban(); derive();
+  });
+
+  ["#crmCountry","#crmLayer","#crmStatus","#crmSearch"].forEach(s => $(s).addEventListener("input", renderCrm));
+  $("#btnResetCrm").addEventListener("click", () => {
+    if (!confirm("Clear every status and note in the application CRM?")) return;
+    S.crm = {}; save(); renderCrm(); renderAbroadKpis();
+  });
+
+  $("#btnAddMed").addEventListener("click", () => { S.meds.push({ name:"", time:"Morning" }); save(); renderMeds(); });
+  $("#btnSaveDay").addEventListener("click", saveDay);
+  $("#btnExportHealth").addEventListener("click", exportHealthCsv);
+  $("#btnAddBlock").addEventListener("click", () => { S.blocks.push(""); save(); renderBlocks(); });
+
+  $("#btnSaveReview").addEventListener("click", () => {
+    const r = {
+      id: uid(), date: $("#r_date").value || iso(TODAY),
+      wins: $("#r_wins").value.trim(), probs: $("#r_probs").value.trim(),
+      top3: $("#r_top3").value.trim(), verdict: $("#r_verdict").value,
+    };
+    if (!r.wins && !r.probs && !r.top3) return toast("Nothing to save yet.");
+    S.reviews.push(r); S.reviews.sort((a,b) => a.date.localeCompare(b.date));
+    ["#r_wins","#r_probs","#r_top3"].forEach(s => $(s).value = "");
+    save(); renderReviews(); toast("Review saved");
+  });
+
+  /* keyboard: n = new card while on the kanban tab */
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input,textarea,select") || e.metaKey || e.ctrlKey) return;
+    if (e.key === "n" && S.tab === "p-kanban") { e.preventDefault(); openCard(null,"week"); }
+  });
+
+  /* warn once if storage is unavailable (private mode, blocked cookies) */
+  try { localStorage.setItem(KEY + ".t","1"); localStorage.removeItem(KEY + ".t"); }
+  catch { toast("Storage is blocked in this browser — nothing will be saved."); }
+}
+
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>
